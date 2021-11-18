@@ -41,14 +41,13 @@ import androidx.navigation.fragment.findNavController
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
+import kotlinx.coroutines.InternalCoroutinesApi
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 class ThirdFragment : Fragment() {
-
-    private enum class ImageState {
-        NORMAL, ZOOM, PINCH_ZOOM
-    }
 
     @ExperimentalAnimationApi
     @ExperimentalComposeUiApi
@@ -69,6 +68,13 @@ class ThirdFragment : Fragment() {
                         .background(Color.Yellow)
                 ) {
                     val pagerState = rememberPagerState()
+                    //HorizontalPagerのcurrentPageに変化があった時にコールバックを返す
+                    LaunchedEffect(Unit) {
+                        snapshotFlow { pagerState.currentPage }
+                            .collectLatest {
+                                println("今のページは$it")
+                            }
+                    }
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -110,15 +116,6 @@ class ThirdFragment : Fragment() {
     private fun SlideshowPage(offsetY: Float) {
         val width = remember { mutableStateOf(0) }
         val scrollState = rememberScrollState()
-        var zoomState by remember { mutableStateOf(ImageState.NORMAL) }
-//        val transition = updateTransition(zoomState, label = "")
-//        val scale by transition.animateFloat(label = "") { state ->
-//            when (state) {
-//                ImageState.NORMAL-> 0f
-//                ImageState.ZOOM -> 2f
-//                ImageState.PINCH_ZOOM -> 1f
-//            }
-//        }
         var scale by remember { mutableStateOf(1f) }
 
         Box(
