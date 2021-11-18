@@ -15,6 +15,7 @@ import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -47,7 +48,6 @@ class ThirdFragment : Fragment() {
                 var offsetY by remember { mutableStateOf(0f) }
                 val coroutineScope = rememberCoroutineScope()
                 var scale = remember { mutableStateOf(1f) }
-                val isZooming by remember { mutableStateOf(scale.value <= 1) }
 
                 Surface(
                     modifier = Modifier
@@ -100,7 +100,7 @@ class ThirdFragment : Fragment() {
                             count = 5,
                             state = pagerState
                         ) {
-                            SlideshowPage(offsetY, scale, isZooming)
+                            SlideshowPage(offsetY, scale)
                         }
                     }
                 }
@@ -111,11 +111,11 @@ class ThirdFragment : Fragment() {
     @ExperimentalComposeUiApi
     @ExperimentalPagerApi
     @Composable
-    private fun SlideshowPage(offsetY: Float, scale: MutableState<Float>, isZooming: Boolean) {
+    private fun SlideshowPage(offsetY: Float, scale: MutableState<Float>) {
         val width = remember { mutableStateOf(0) }
         val scrollState = rememberScrollState()
 
-        Column(
+        Box(
             modifier = Modifier
                 .onGloballyPositioned { coordinates ->
                     width.value = coordinates.size.width
@@ -194,6 +194,18 @@ class ThirdFragment : Fragment() {
                                         ) { value, velocity ->
                                             scale.value = value
                                         }
+                                        animate(
+                                            initialValue = offset.x,
+                                            targetValue = 0f
+                                        ) { value, velocity ->
+                                            offset = Offset(value, offset.y)
+                                        }
+                                        animate(
+                                            initialValue = offset.y,
+                                            targetValue = 0f
+                                        ) { value, velocity ->
+                                            offset = Offset(value, offset.x)
+                                        }
                                     } else {
                                         animate(
                                             initialValue = 1f,
@@ -208,8 +220,7 @@ class ThirdFragment : Fragment() {
                             }
                         )
                     }
-                    .fillMaxWidth()
-                    .height(300.dp)
+                    .fillMaxSize()
 //                    .pointerInput(Unit) {
 //                        forEachGesture {
 //                            awaitPointerEventScope {
@@ -231,16 +242,21 @@ class ThirdFragment : Fragment() {
 //                        }
 //                    }
             )
-            Column(
-                modifier = Modifier
-                    .verticalScroll(scrollState)
-            ) {
-                Text(
-                    text = "タイトル"
-                )
-                Text(
-                    text = "なんかいろいろ説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n",
-                )
+            if (scale.value <= 1f) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                        .align(Alignment.BottomCenter)
+                        .verticalScroll(scrollState)
+                ) {
+                    Text(
+                        text = "タイトル"
+                    )
+                    Text(
+                        text = "なんかいろいろ説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n",
+                    )
+                }
             }
         }
     }
