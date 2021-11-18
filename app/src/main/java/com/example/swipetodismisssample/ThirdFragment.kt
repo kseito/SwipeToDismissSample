@@ -6,7 +6,8 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.core.*
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animate
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
@@ -33,6 +34,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
@@ -55,6 +57,9 @@ class ThirdFragment : Fragment() {
                 var height by remember { mutableStateOf(0) }
                 var offsetY by remember { mutableStateOf(0f) }
                 val coroutineScope = rememberCoroutineScope()
+                val draggableState = rememberDraggableState { delta ->
+                    offsetY += delta
+                }
                 var scale = remember { mutableStateOf(1f) }
 
                 Surface(
@@ -68,41 +73,41 @@ class ThirdFragment : Fragment() {
                             .onGloballyPositioned { coordinates ->
                                 height = coordinates.size.height
                             }
-//                            .draggable(
-//                                orientation = Orientation.Vertical,
-//                                state = draggableState,
-//                                onDragStopped = {
-//                                    if (offsetY.value < height.value / 3) {
-//                                        coroutineScope.launch {
-//                                            androidx.compose.animation.core.animate(offsetY.value, 0f) { value, _ ->
-//                                                offsetY.value = value
-//                                            }
-//                                        }
-//                                    } else {
-//                                        findNavController().popBackStack()
-//                                    }
-//                                }
-//                            )
-                            //画面閉じる用縦スワイプの代わり
-                            .pointerInput(Unit) {
-                                forEachGesture {
-                                    awaitPointerEventScope {
-                                        awaitFirstDown(requireUnconsumed = false)
-                                        do {
-                                            println("scale${scale.value}")
-                                            if (scale.value > 1f) return@awaitPointerEventScope
-                                            val event = awaitPointerEvent()
-                                            val canceled = event.changes.any { it.positionChangeConsumed() }
-                                            if (!canceled) {
-                                                val offset = event.calculatePan()
-                                                offsetY += offset.y
-                                                println("親ビュー$offset")
-                                                event.changes.forEach { it.consumeAllChanges() }
+                            .draggable(
+                                orientation = Orientation.Vertical,
+                                state = draggableState,
+                                onDragStopped = {
+                                    if (offsetY < height / 3) {
+                                        coroutineScope.launch {
+                                            animate(offsetY, 0f) { value, _ ->
+                                                offsetY = value
                                             }
-                                        } while (event.changes.any { it.pressed })
+                                        }
+                                    } else {
+                                        findNavController().popBackStack()
                                     }
                                 }
-                            }
+                            )
+                        //画面閉じる用縦スワイプの代わり
+//                            .pointerInput(Unit) {
+//                                forEachGesture {
+//                                    awaitPointerEventScope {
+//                                        awaitFirstDown(requireUnconsumed = false)
+//                                        do {
+//                                            println("scale${scale.value}")
+//                                            if (scale.value > 1f) return@awaitPointerEventScope
+//                                            val event = awaitPointerEvent()
+//                                            val canceled = event.changes.any { it.positionChangeConsumed() }
+//                                            if (!canceled) {
+//                                                val offset = event.calculatePan()
+//                                                offsetY += offset.y
+//                                                println("親ビュー$offset")
+//                                                event.changes.forEach { it.consumeAllChanges() }
+//                                            }
+//                                        } while (event.changes.any { it.pressed })
+//                                    }
+//                                }
+//                            }
                     ) {
                         HorizontalPager(
                             count = 5,
@@ -279,7 +284,7 @@ class ThirdFragment : Fragment() {
                 modifier = Modifier
                     .fillMaxWidth()
                     .align(Alignment.BottomCenter)
-                ) {
+            ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
