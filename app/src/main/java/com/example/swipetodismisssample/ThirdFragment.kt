@@ -4,7 +4,11 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.*
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.*
@@ -18,7 +22,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.consumeAllChanges
@@ -38,6 +41,11 @@ import kotlin.math.roundToInt
 
 class ThirdFragment : Fragment() {
 
+    private enum class ImageState {
+        NORMAL, ZOOM, PINCH_ZOOM
+    }
+
+    @ExperimentalAnimationApi
     @ExperimentalComposeUiApi
     @ExperimentalPagerApi
     @ExperimentalMaterialApi
@@ -108,15 +116,26 @@ class ThirdFragment : Fragment() {
         }
     }
 
+    @ExperimentalAnimationApi
     @ExperimentalComposeUiApi
     @ExperimentalPagerApi
     @Composable
     private fun SlideshowPage(offsetY: Float, scale: MutableState<Float>) {
         val width = remember { mutableStateOf(0) }
         val scrollState = rememberScrollState()
+        var zoomState by remember { mutableStateOf(ImageState.NORMAL) }
+//        val transition = updateTransition(zoomState, label = "")
+//        val scale by transition.animateFloat(label = "") { state ->
+//            when (state) {
+//                ImageState.NORMAL-> 0f
+//                ImageState.ZOOM -> 2f
+//                ImageState.PINCH_ZOOM -> 1f
+//            }
+//        }
 
         Box(
             modifier = Modifier
+                .fillMaxSize()
                 .onGloballyPositioned { coordinates ->
                     width.value = coordinates.size.width
                 }
@@ -125,9 +144,11 @@ class ThirdFragment : Fragment() {
                 }
                 .background(color = Color.Cyan)
         ) {
-            var offset by remember { mutableStateOf(Offset.Zero) }
+            val offsetX = remember { Animatable(0f) }
+            val offsetY = remember { Animatable(0f) }
             var width by remember { mutableStateOf(0) }
             var height by remember { mutableStateOf(0) }
+            var textAlpha by remember { mutableStateOf(1f) }
             val coroutinesScope = rememberCoroutineScope()
 
             Image(
@@ -141,8 +162,8 @@ class ThirdFragment : Fragment() {
                     .graphicsLayer(
                         scaleX = scale.value,
                         scaleY = scale.value,
-                        translationX = offset.x,
-                        translationY = offset.y
+                        translationX = offsetX.value,
+                        translationY = offsetY.value
                     )
                     //画像ズームっぽい動き
                     .pointerInput(1) {
@@ -162,20 +183,18 @@ class ThirdFragment : Fragment() {
                                         val rightBound = width * (scale.value) / 4
                                         println("$leftBound, $rightBound")
                                         println(
-                                            "offsetXは" + (offset.x + newOffset.x).coerceIn(
+                                            "offsetXは" + (offsetX.value + newOffset.x).coerceIn(
                                                 leftBound,
                                                 rightBound
                                             )
                                         )
                                         if (scale.value > 1f) {
-                                            offset = Offset(
-                                                (offset.x + newOffset.x).coerceIn(
-                                                    leftBound,
-                                                    rightBound
-                                                ), offset.y + newOffset.y
-                                            )
+                                            coroutinesScope.launch {
+                                                offsetX.snapTo((offsetX.value + newOffset.x).coerceIn(leftBound, rightBound))
+                                                offsetY.snapTo(offsetY.value + newOffset.y)
+                                            }
                                         }
-                                        if ((leftBound < offset.x && offset.x < rightBound) || scale.value > 1f) {
+                                        if ((leftBound < offsetX.value && offsetX.value < rightBound) || scale.value > 1f) {
                                             event.changes.forEach { it.consumeAllChanges() }
                                         }
                                     }
@@ -188,23 +207,27 @@ class ThirdFragment : Fragment() {
                             onDoubleTap = {
                                 coroutinesScope.launch {
                                     if (scale.value > 1f) {
-                                        animate(
-                                            initialValue = scale.value,
-                                            targetValue = 1f
-                                        ) { value, velocity ->
-                                            scale.value = value
+                                        launch {
+                                            animate(
+                                                initialValue = scale.value,
+                                                targetValue = 1f
+                                            ) { value, velocity ->
+                                                scale.value = value
+                                            }
                                         }
-                                        animate(
-                                            initialValue = offset.x,
-                                            targetValue = 0f
-                                        ) { value, velocity ->
-                                            offset = Offset(value, offset.y)
+                                        launch {
+                                            offsetX.animateTo(targetValue = 0f)
                                         }
-                                        animate(
-                                            initialValue = offset.y,
-                                            targetValue = 0f
-                                        ) { value, velocity ->
-                                            offset = Offset(value, offset.x)
+                                        launch {
+                                            offsetY.animateTo(targetValue = 0f)
+                                        }
+                                        launch {
+                                            animate(
+                                                initialValue = 0f,
+                                                targetValue = 1f
+                                            ) { value, velocity ->
+                                                textAlpha = value
+                                            }
                                         }
                                     } else {
                                         animate(
@@ -213,6 +236,12 @@ class ThirdFragment : Fragment() {
                                         ) { value, velocity ->
                                             scale.value = value
                                         }
+                                        animate(
+                                            initialValue = 1f,
+                                            targetValue = 0f
+                                        ) { value, velocity ->
+                                            textAlpha = value
+                                        }
                                     }
                                 }
 
@@ -220,7 +249,8 @@ class ThirdFragment : Fragment() {
                             }
                         )
                     }
-                    .fillMaxSize()
+                    .fillMaxWidth()
+                    .align(Alignment.Center)
 //                    .pointerInput(Unit) {
 //                        forEachGesture {
 //                            awaitPointerEventScope {
@@ -242,12 +272,18 @@ class ThirdFragment : Fragment() {
 //                        }
 //                    }
             )
-            if (scale.value <= 1f) {
+            AnimatedVisibility(
+                visible = scale.value <= 1f,
+                enter = fadeIn(),
+                exit = fadeOut(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.BottomCenter)
+                ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(200.dp)
-                        .align(Alignment.BottomCenter)
+                        .height(300.dp)
                         .verticalScroll(scrollState)
                 ) {
                     Text(
