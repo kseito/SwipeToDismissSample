@@ -23,6 +23,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.consumeAllChanges
@@ -33,6 +34,7 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.google.accompanist.pager.ExperimentalPagerApi
@@ -60,7 +62,6 @@ class ThirdFragment : Fragment() {
                 val draggableState = rememberDraggableState { delta ->
                     offsetY += delta
                 }
-                var scale = remember { mutableStateOf(1f) }
 
                 Surface(
                     modifier = Modifier
@@ -113,7 +114,7 @@ class ThirdFragment : Fragment() {
                             count = 5,
                             state = pagerState
                         ) {
-                            SlideshowPage(offsetY, scale)
+                            SlideshowPage(offsetY)
                         }
                     }
                 }
@@ -125,7 +126,7 @@ class ThirdFragment : Fragment() {
     @ExperimentalComposeUiApi
     @ExperimentalPagerApi
     @Composable
-    private fun SlideshowPage(offsetY: Float, scale: MutableState<Float>) {
+    private fun SlideshowPage(offsetY: Float) {
         val width = remember { mutableStateOf(0) }
         val scrollState = rememberScrollState()
         var zoomState by remember { mutableStateOf(ImageState.NORMAL) }
@@ -137,6 +138,7 @@ class ThirdFragment : Fragment() {
 //                ImageState.PINCH_ZOOM -> 1f
 //            }
 //        }
+        var scale by remember { mutableStateOf(1f) }
 
         Box(
             modifier = Modifier
@@ -147,7 +149,7 @@ class ThirdFragment : Fragment() {
                 .offset {
                     IntOffset(0, offsetY.roundToInt())
                 }
-                .background(color = Color.Cyan)
+                .background(color = Color.Black)
         ) {
             val offsetX = remember { Animatable(0f) }
             val offsetY = remember { Animatable(0f) }
@@ -165,8 +167,8 @@ class ThirdFragment : Fragment() {
                         height = it.size.height
                     }
                     .graphicsLayer(
-                        scaleX = scale.value,
-                        scaleY = scale.value,
+                        scaleX = scale,
+                        scaleY = scale,
                         translationX = offsetX.value,
                         translationY = offsetY.value
                     )
@@ -176,16 +178,16 @@ class ThirdFragment : Fragment() {
                         forEachGesture {
                             println("い")
                             awaitPointerEventScope {
-                                println("う${scale.value}")
+                                println("う${scale}")
                                 awaitFirstDown(false)
                                 do {
                                     val event = awaitPointerEvent()
                                     val canceled = event.changes.any { it.positionChangeConsumed() }
                                     if (!canceled) {
-                                        scale.value *= event.calculateZoom()
-                                        val newOffset = event.calculatePan() * scale.value
-                                        val leftBound = -width * (scale.value - 1) / 2
-                                        val rightBound = width * (scale.value) / 4
+                                        scale *= event.calculateZoom()
+                                        val newOffset = event.calculatePan() * scale
+                                        val leftBound = -width * (scale - 1) / 2
+                                        val rightBound = width * (scale) / 4
                                         println("$leftBound, $rightBound")
                                         println(
                                             "offsetXは" + (offsetX.value + newOffset.x).coerceIn(
@@ -193,13 +195,13 @@ class ThirdFragment : Fragment() {
                                                 rightBound
                                             )
                                         )
-                                        if (scale.value > 1f) {
+                                        if (scale > 1f) {
                                             coroutinesScope.launch {
                                                 offsetX.snapTo((offsetX.value + newOffset.x).coerceIn(leftBound, rightBound))
                                                 offsetY.snapTo(offsetY.value + newOffset.y)
                                             }
                                         }
-                                        if ((leftBound < offsetX.value && offsetX.value < rightBound) || scale.value > 1f) {
+                                        if ((leftBound < offsetX.value && offsetX.value < rightBound) || scale > 1f) {
                                             event.changes.forEach { it.consumeAllChanges() }
                                         }
                                     }
@@ -211,13 +213,13 @@ class ThirdFragment : Fragment() {
                         detectTapGestures(
                             onDoubleTap = {
                                 coroutinesScope.launch {
-                                    if (scale.value > 1f) {
+                                    if (scale > 1f) {
                                         launch {
                                             animate(
-                                                initialValue = scale.value,
+                                                initialValue = scale,
                                                 targetValue = 1f
                                             ) { value, velocity ->
-                                                scale.value = value
+                                                scale = value
                                             }
                                         }
                                         launch {
@@ -239,7 +241,7 @@ class ThirdFragment : Fragment() {
                                             initialValue = 1f,
                                             targetValue = 2f
                                         ) { value, velocity ->
-                                            scale.value = value
+                                            scale = value
                                         }
                                         animate(
                                             initialValue = 1f,
@@ -278,7 +280,7 @@ class ThirdFragment : Fragment() {
 //                    }
             )
             AnimatedVisibility(
-                visible = scale.value <= 1f,
+                visible = scale <= 1f,
                 enter = fadeIn(),
                 exit = fadeOut(),
                 modifier = Modifier
@@ -289,13 +291,18 @@ class ThirdFragment : Fragment() {
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(300.dp)
+                        .background(Color.Black.copy(alpha = 0.5f))
                         .verticalScroll(scrollState)
                 ) {
                     Text(
-                        text = "タイトル"
+                        text = "タイトル",
+                        color = Color.White,
+                        fontSize = 24.sp
                     )
                     Text(
                         text = "なんかいろいろ説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n説明\n",
+                        color = Color.White,
+                        fontSize = 18.sp
                     )
                 }
             }
