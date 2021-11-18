@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.consumeAllChanges
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChangeConsumed
+import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.res.painterResource
@@ -89,26 +90,6 @@ class ThirdFragment : Fragment() {
                                     }
                                 }
                             )
-                        //画面閉じる用縦スワイプの代わり
-//                            .pointerInput(Unit) {
-//                                forEachGesture {
-//                                    awaitPointerEventScope {
-//                                        awaitFirstDown(requireUnconsumed = false)
-//                                        do {
-//                                            println("scale${scale.value}")
-//                                            if (scale.value > 1f) return@awaitPointerEventScope
-//                                            val event = awaitPointerEvent()
-//                                            val canceled = event.changes.any { it.positionChangeConsumed() }
-//                                            if (!canceled) {
-//                                                val offset = event.calculatePan()
-//                                                offsetY += offset.y
-//                                                println("親ビュー$offset")
-//                                                event.changes.forEach { it.consumeAllChanges() }
-//                                            }
-//                                        } while (event.changes.any { it.pressed })
-//                                    }
-//                                }
-//                            }
                     ) {
                         HorizontalPager(
                             count = 5,
@@ -155,7 +136,6 @@ class ThirdFragment : Fragment() {
             val offsetY = remember { Animatable(0f) }
             var width by remember { mutableStateOf(0) }
             var height by remember { mutableStateOf(0) }
-            var textAlpha by remember { mutableStateOf(1f) }
             val coroutinesScope = rememberCoroutineScope()
 
             Image(
@@ -188,7 +168,6 @@ class ThirdFragment : Fragment() {
                                         val newOffset = event.calculatePan() * scale
                                         val leftBound = -width * (scale - 1) / 2
                                         val rightBound = width * (scale) / 4
-                                        println("$leftBound, $rightBound")
                                         println(
                                             "offsetXは" + (offsetX.value + newOffset.x).coerceIn(
                                                 leftBound,
@@ -205,6 +184,7 @@ class ThirdFragment : Fragment() {
                                             event.changes.forEach { it.consumeAllChanges() }
                                         }
                                     }
+
                                 } while (event.changes.any { it.pressed })
                             }
                         }
@@ -228,26 +208,12 @@ class ThirdFragment : Fragment() {
                                         launch {
                                             offsetY.animateTo(targetValue = 0f)
                                         }
-                                        launch {
-                                            animate(
-                                                initialValue = 0f,
-                                                targetValue = 1f
-                                            ) { value, velocity ->
-                                                textAlpha = value
-                                            }
-                                        }
                                     } else {
                                         animate(
                                             initialValue = 1f,
                                             targetValue = 2f
                                         ) { value, velocity ->
                                             scale = value
-                                        }
-                                        animate(
-                                            initialValue = 1f,
-                                            targetValue = 0f
-                                        ) { value, velocity ->
-                                            textAlpha = value
                                         }
                                     }
                                 }
@@ -258,26 +224,6 @@ class ThirdFragment : Fragment() {
                     }
                     .fillMaxWidth()
                     .align(Alignment.Center)
-//                    .pointerInput(Unit) {
-//                        forEachGesture {
-//                            awaitPointerEventScope {
-//                                awaitFirstDown(requireUnconsumed = false)
-//                                do {
-//                                    val event = awaitPointerEvent()
-//                                    val canceled = event.changes.any { it.consumed.positionChange }
-//                                } while (!canceled && event.changes.any { it.pressed })
-//                                if (offsetY.value < height.value / 3) {
-//                                    coroutineScope.launch {
-//                                        androidx.compose.animation.core.animate(offsetY.value, 0f) { value, _ ->
-//                                            offsetY.value = value
-//                                        }
-//                                    }
-//                                } else {
-//                                    findNavController().popBackStack()
-//                                }
-//                            }
-//                        }
-//                    }
             )
             AnimatedVisibility(
                 visible = scale <= 1f,
