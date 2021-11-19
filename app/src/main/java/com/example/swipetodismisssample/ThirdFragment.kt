@@ -145,17 +145,14 @@ class ThirdFragment : Fragment() {
                     )
                     //画像ズームっぽい動き
                     .pointerInput(1) {
-                        println("あ")
                         forEachGesture {
-                            println("い")
                             awaitPointerEventScope {
-                                println("う${scale}")
                                 awaitFirstDown(false)
                                 do {
                                     val event = awaitPointerEvent()
                                     val canceled = event.changes.any { it.positionChangeConsumed() }
                                     if (!canceled) {
-                                        scale *= event.calculateZoom()
+                                        scale = (scale * event.calculateZoom()).coerceIn(1f, 3f)
                                         val newOffset = event.calculatePan() * scale
                                         val leftBound = -width * (scale - 1) / 2
                                         val rightBound = width * (scale) / 4
