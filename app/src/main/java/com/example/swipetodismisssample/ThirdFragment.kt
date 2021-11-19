@@ -23,13 +23,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.consumeAllChanges
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChangeConsumed
-import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.res.painterResource
@@ -41,9 +39,7 @@ import androidx.navigation.fragment.findNavController
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
-import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -165,12 +161,6 @@ class ThirdFragment : Fragment() {
                                         val newOffset = event.calculatePan() * scale
                                         val leftBound = -width * (scale - 1) / 2
                                         val rightBound = width * (scale) / 4
-                                        println(
-                                            "offsetXは" + (offsetX.value + newOffset.x).coerceIn(
-                                                leftBound,
-                                                rightBound
-                                            )
-                                        )
                                         if (scale > 1f) {
                                             coroutinesScope.launch {
                                                 offsetX.snapTo((offsetX.value + newOffset.x).coerceIn(leftBound, rightBound))
@@ -206,11 +196,19 @@ class ThirdFragment : Fragment() {
                                             offsetY.animateTo(targetValue = 0f)
                                         }
                                     } else {
-                                        animate(
-                                            initialValue = 1f,
-                                            targetValue = 2f
-                                        ) { value, velocity ->
-                                            scale = value
+                                        launch {
+                                            animate(
+                                                initialValue = 1f,
+                                                targetValue = 2f
+                                            ) { value, velocity ->
+                                                scale = value
+                                            }
+                                        }
+                                        launch {
+                                            offsetX.animateTo(targetValue = offsetX.value + width / 2 - it.x)
+                                        }
+                                        launch {
+                                            offsetY.animateTo(targetValue = offsetY.value + height / 2 - it.y)
                                         }
                                     }
                                 }
