@@ -130,7 +130,7 @@ class ThirdFragment : Fragment() {
             val coroutinesScope = rememberCoroutineScope()
 
             Image(
-                painter = painterResource(id = R.drawable.puipui_test),
+                painter = painterResource(id = R.drawable.device_image),
                 contentDescription = null,
                 modifier = Modifier
                     .onGloballyPositioned {
@@ -155,11 +155,13 @@ class ThirdFragment : Fragment() {
                                         scale = (scale * event.calculateZoom()).coerceIn(1f, 3f)
                                         val newOffset = event.calculatePan() * scale
                                         val leftBound = -width * (scale - 1) / 2
-                                        val rightBound = width * (scale) / 4
+                                        val rightBound = width * scale / 4
+                                        val topBound = -height * (scale - 1) / 2
+                                        val bottomBound = height * scale / 4
                                         if (scale > 1f) {
                                             coroutinesScope.launch {
                                                 offsetX.snapTo((offsetX.value + newOffset.x).coerceIn(leftBound, rightBound))
-                                                offsetY.snapTo(offsetY.value + newOffset.y)
+                                                offsetY.snapTo((offsetY.value + newOffset.y).coerceIn(topBound, bottomBound))
                                             }
                                         }
                                         if ((leftBound < offsetX.value && offsetX.value < rightBound) || scale > 1f) {
@@ -212,7 +214,7 @@ class ThirdFragment : Fragment() {
                             }
                         )
                     }
-                    .fillMaxWidth()
+                    .fillMaxSize()
                     .align(Alignment.Center)
             )
             AnimatedVisibility(
