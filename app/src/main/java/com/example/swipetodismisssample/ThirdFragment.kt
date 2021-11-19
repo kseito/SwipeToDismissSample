@@ -31,6 +31,7 @@ import androidx.compose.ui.input.pointer.positionChangeConsumed
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -77,6 +78,9 @@ class ThirdFragment : Fragment() {
                             .onGloballyPositioned { coordinates ->
                                 height = coordinates.size.height
                             }
+                            .offset {
+                                IntOffset(0, offsetY.roundToInt())
+                            }
                             .draggable(
                                 orientation = Orientation.Vertical,
                                 state = draggableState,
@@ -97,7 +101,7 @@ class ThirdFragment : Fragment() {
                             count = 5,
                             state = pagerState
                         ) {
-                            SlideshowPage(offsetY)
+                            SlideshowPage()
                         }
                     }
                 }
@@ -108,21 +112,15 @@ class ThirdFragment : Fragment() {
     @ExperimentalAnimationApi
     @ExperimentalComposeUiApi
     @ExperimentalPagerApi
+    @Preview
     @Composable
-    private fun SlideshowPage(offsetY: Float) {
-        val width = remember { mutableStateOf(0) }
+    private fun SlideshowPage() {
         val scrollState = rememberScrollState()
         var scale by remember { mutableStateOf(1f) }
 
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .onGloballyPositioned { coordinates ->
-                    width.value = coordinates.size.width
-                }
-                .offset {
-                    IntOffset(0, offsetY.roundToInt())
-                }
                 .background(color = Color.Black)
         ) {
             val offsetX = remember { Animatable(0f) }
